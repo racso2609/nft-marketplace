@@ -62,26 +62,44 @@ describe("Marketplace", () => {
       const tx = await nft.mint(tokenURI, 10);
       await printGas(tx);
     });
+    describe("create sell", () => {
+      it("unlock for sale fail try list 0 tokens", async () => {
+        await expect(
+          marketplace.unlockForSale(tokenId, 0, priceUSD)
+        ).to.be.revertedWith("You cant sell 0 tokens!");
+      });
+      it("unlock for sale fail you dont have enought tokens", async () => {
+        await expect(
+          marketplace.unlockForSale(tokenId, amount + 1, priceUSD)
+        ).to.be.revertedWith("You dont have enought tokens!");
+      });
+      it("unlock for sale", async () => {
+        const tx = await marketplace.unlockForSale(tokenId, amount, priceUSD);
+        await printGas(tx);
+        const sellId = tx.value;
+        const newSell = await marketplace.sells(sellId);
 
-    it("unlock for sale fail try list 0 tokens", async () => {
-      await expect(
-        marketplace.unlockForSale(tokenId, 0, priceUSD)
-      ).to.be.revertedWith("You cant sell 0 tokens!");
+        expect(newSell.tokenId).to.be.eq(tokenId);
+        expect(newSell.amount).to.be.eq(amount);
+        expect(newSell.priceUSD).to.be.eq(priceUSD);
+      });
     });
-    it("unlock for sale fail you dont have enought tokens", async () => {
-      await expect(
-        marketplace.unlockForSale(tokenId, amount + 1, priceUSD)
-      ).to.be.revertedWith("You dont have enought tokens!");
-    });
-    it("unlock for sale", async () => {
-      const tx = await marketplace.unlockForSale(tokenId, amount, priceUSD);
-      await printGas(tx);
-      const sellId = tx.value;
-      const newSell = await marketplace.sells(sellId);
+    describe("buy", () => {
+      beforeEach(async () => {
+        const tx = await marketplace.unlockForSale(tokenId, amount, priceUSD);
+        await printGas(tx);
+        sellId = tx.value;
+      });
+      describe("eth", () => {
+        beforeEach(async () => {
+          paymentMethod = "eth";
+        });
 
-      expect(newSell.tokenId).to.be.eq(tokenId);
-      expect(newSell.amount).to.be.eq(amount);
-      expect(newSell.priceUSD).to.be.eq(priceUSD);
+        it("fail trying to buy not enought token on seller address", () => {});
+        it("fail trying to buy for less than the avaliable price", () => {});
+        it("buy", () => {});
+        it("buy sending more thant the price", () => {});
+      });
     });
   });
 });

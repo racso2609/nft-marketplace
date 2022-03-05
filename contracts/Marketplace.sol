@@ -4,8 +4,9 @@ import "@openzeppelin/contracts/utils/Counters.sol";
 import "./ERC1155/ERC1155.sol";
 import "./utils/RoleManagement.sol";
 import "./utils/TaxManagement.sol";
+import "./utils/Payment.sol";
 
-contract Marketplace is Initializable, RoleManagement, TaxManagement {
+contract Marketplace is Initializable, RoleManagement, TaxManagement, Payment {
     using Counters for Counters.Counter;
 
     Nft public erc1155;
@@ -31,6 +32,7 @@ contract Marketplace is Initializable, RoleManagement, TaxManagement {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _setTaxRate(_taxRate);
         _setRecipient(_recipient);
+        _updateAvaliablePayments(["eht"]);
     }
 
     /// @param _erc1155 address of the erc1155 contract already initialized
@@ -42,6 +44,7 @@ contract Marketplace is Initializable, RoleManagement, TaxManagement {
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
         erc1155 = _erc1155;
+        _updateAvaliablePayments(["eht"]);
     }
 
     function setTaxRate(uint256 _taxRate)
@@ -77,4 +80,9 @@ contract Marketplace is Initializable, RoleManagement, TaxManagement {
         sellQuantity.increment();
         return sellQuantity.current() - 1;
     }
+
+    function buy(uint256 tokenId, string calldata _paymentType)
+        external
+        payable
+    {}
 }
