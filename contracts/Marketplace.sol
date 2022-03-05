@@ -1,36 +1,36 @@
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "./ERC721/ERC721.sol";
+import "./ERC1155/ERC1155.sol";
 
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 
 contract Marketplace is Initializable, AccessControlUpgradeable {
-    ERC721 public erc721;
+    Nft public erc1155;
     uint256 public taxRate;
     address public recipient;
 
-    /// @param _erc721 address of the erc721 contract already initialized
+    /// @param _erc1155 address of the erc1155 contract already initialized
     /// @dev initialize marketplace contract
     function initialize(
-        ERC721 _erc721,
+        Nft _erc1155,
         uint256 _taxRate,
         address _recipient
     ) external initializer {
-        erc721 = _erc721;
+        erc1155 = _erc1155;
         __AccessControl_init();
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         taxRate = _taxRate;
         recipient = _recipient;
     }
 
-    /// @param _erc721 address of the erc721 contract already initialized
+    /// @param _erc1155 address of the erc1155 contract already initialized
     /// @dev change the erc721 contract only owner
 
-    function reinitialize(ERC721 _erc721)
+    function reinitialize(Nft _erc1155)
         external
         onlyInitializing
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
-        erc721 = _erc721;
+        erc1155 = _erc1155;
     }
 
     function becomeAdmin(address _user) public onlyRole(DEFAULT_ADMIN_ROLE) {

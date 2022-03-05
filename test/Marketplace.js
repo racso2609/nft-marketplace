@@ -9,12 +9,12 @@ describe("Marketplace", () => {
     userSigner = await ethers.provider.getSigner(user);
     await fixture(["Marketplace"]);
     marketplace = await ethers.getContract("Marketplace");
-    nft = await ethers.getContract("ERC721");
+    nft = await ethers.getContract("Nft");
   });
   describe("Initialize contract", () => {
-    it("correct erc721 contrac", async () => {
-      const erc721 = await marketplace.erc721();
-      expect(erc721).to.be.eq(nft.address);
+    it("correct erc1155 contrac", async () => {
+      const erc1155 = await marketplace.erc1155();
+      expect(erc1155).to.be.eq(nft.address);
     });
   });
   describe("Set up admin role", () => {

@@ -6,23 +6,19 @@ describe("Nft", () => {
   beforeEach(async () => {
     ({ deployer, user, userNotRegister } = await getNamedAccounts());
     userSigner = await ethers.provider.getSigner(user);
-    await fixture(["ERC721"]);
-    nft = await ethers.getContract("ERC721");
+    await fixture(["Nft"]);
+    nft = await ethers.getContract("Nft");
   });
   describe("Initialize contract", () => {
-    it("initialize info", async () => {
-      const name = await nft.name();
-      const symbol = await nft.symbol();
-      expect(name).to.be.equal("RACSO");
-      expect(symbol).to.be.equal("RAC");
-    });
     it("able to mint", async () => {
       const URI = "ipfs://utiiiiti/utitii";
-      const tx = await nft.mint(URI);
+      const tx = await nft.mint(URI, 10);
       await printGas(tx);
       const tokenId = tx.value.toNumber();
-      const nftURI = await nft.tokenURI(tokenId);
+      const nftBalance = await nft.balanceOf(deployer, tokenId);
+      const nftURI = await nft.uri(tokenId);
       expect(nftURI).to.be.eq(URI);
+      expect(nftBalance).to.be.eq(10);
     });
   });
 });
