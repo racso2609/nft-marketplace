@@ -13,9 +13,11 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     log: true,
     proxy: {
       owner: deployer,
-      init: {
-        methodName: "initialize",
-        args: [TOKEN_NAME, TOKEN_SYMBOL],
+      execute: {
+        init: {
+          methodName: "initialize",
+          args: [TOKEN_NAME, TOKEN_SYMBOL],
+        },
       },
     },
   });
