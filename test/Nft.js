@@ -1,6 +1,5 @@
 const { expect } = require("chai");
 const { fixture } = deployments;
-const { utils } = ethers;
 const { printGas } = require("../utils/transactions");
 
 describe("Nft", () => {
@@ -14,7 +13,6 @@ describe("Nft", () => {
     it("initialize info", async () => {
       const name = await nft.name();
       const symbol = await nft.symbol();
-      console.log(name, symbol);
       expect(name).to.be.equal("RACSO");
       expect(symbol).to.be.equal("RAC");
     });
@@ -22,9 +20,9 @@ describe("Nft", () => {
       const URI = "ipfs://utiiiiti/utitii";
       const tx = await nft.mint(URI);
       await printGas(tx);
-      const newNft = await nft.nfts(1);
-      console.log(newNft);
-      expect(newNft).to.be.eq(URI);
+      const tokenId = tx.value.toNumber();
+      const nftURI = await nft.tokenURI(tokenId);
+      expect(nftURI).to.be.eq(URI);
     });
   });
 });

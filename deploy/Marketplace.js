@@ -1,26 +1,27 @@
-const CONTRACT_NAME = "ERC721";
-const TOKEN_NAME = "RACSO";
-const TOKEN_SYMBOL = "RAC";
+const CONTRACT_NAME = "Marketplace";
+const TAX_RATE = 1;
 
 // modify when needed
 module.exports = async ({ getNamedAccounts, deployments }) => {
   const { deploy } = deployments;
-  const { deployer } = await getNamedAccounts();
+  const { deployer, feeRecipient } = await getNamedAccounts();
+
+  const ERC721 = await deployments.get("ERC721");
 
   // Upgradeable Proxy
   await deploy(CONTRACT_NAME, {
     from: deployer,
     log: true,
     proxy: {
-      owner: deployer,
       execute: {
         init: {
           methodName: "initialize",
-          args: [TOKEN_NAME, TOKEN_SYMBOL],
+          args: [ERC721.address, TAX_RATE, feeRecipient],
         },
       },
     },
   });
 };
 
-module.exports.tags = [CONTRACT_NAME, "ERC721", "Marketplace"];
+module.exports.tags = [CONTRACT_NAME, "Marketplace"];
+module.exports.dependencies = ["ERC721"];
