@@ -1,12 +1,10 @@
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "./ERC1155/ERC1155.sol";
+import "./utils/RoleManagement.sol";
+import "./utils/TaxManagement.sol";
 
-import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
-
-contract Marketplace is Initializable, AccessControlUpgradeable {
+contract Marketplace is Initializable, RoleManagement, TaxManagement {
     Nft public erc1155;
-    uint256 public taxRate;
-    address public recipient;
 
     /// @param _erc1155 address of the erc1155 contract already initialized
     /// @dev initialize marketplace contract
@@ -16,10 +14,9 @@ contract Marketplace is Initializable, AccessControlUpgradeable {
         address _recipient
     ) external initializer {
         erc1155 = _erc1155;
-        __AccessControl_init();
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        taxRate = _taxRate;
-        recipient = _recipient;
+        _setTaxRate(_taxRate);
+        _setRecipient(_recipient);
     }
 
     /// @param _erc1155 address of the erc1155 contract already initialized
@@ -33,25 +30,17 @@ contract Marketplace is Initializable, AccessControlUpgradeable {
         erc1155 = _erc1155;
     }
 
-    function becomeAdmin(address _user) public onlyRole(DEFAULT_ADMIN_ROLE) {
-        _grantRole(DEFAULT_ADMIN_ROLE, _user);
-    }
-
-    function isAdmin(address _user) public returns (bool) {
-        return hasRole(DEFAULT_ADMIN_ROLE, _user);
-    }
-
     function setTaxRate(uint256 _taxRate)
         external
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
-        taxRate = _taxRate;
+        _setTaxRate(_taxRate);
     }
 
     function setRecipient(address _recipient)
         external
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
-        recipient = _recipient;
+        _setRecipient(_recipient);
     }
 }
