@@ -28,31 +28,60 @@ describe("Marketplace", () => {
       const isAdmin = await marketplace.isAdmin(user);
       expect(isAdmin);
     });
+    describe("taxRate", () => {
+      it("fail no admin setting up rate", async () => {
+        await expect(marketplace.connect(userSigner).setTaxRate(2)).to.be
+          .reverted;
+      });
+      it("admin can set up rate", async () => {
+        const tx = await marketplace.setTaxRate(2);
+        await printGas(tx);
+        const taxRate = await marketplace.taxRate();
+        expect(taxRate).to.be.eq(2);
+      });
+    });
+    describe("recipient", () => {
+      it("fail no admin setting up recipient", async () => {
+        await expect(marketplace.connect(userSigner).setRecipient(2)).to.be
+          .reverted;
+      });
+      it("admin can set up rate", async () => {
+        const tx = await marketplace.setRecipient(deployer);
+        await printGas(tx);
+        const taxRate = await marketplace.recipient();
+        expect(taxRate).to.be.eq(deployer);
+      });
+    });
   });
-
-  describe("taxRate", () => {
-    it("fail no admin setting up rate", async () => {
-      await expect(marketplace.connect(userSigner).setTaxRate(2)).to.be
-        .reverted;
-    });
-    it("admin can set up rate", async () => {
-      const tx = await marketplace.setTaxRate(2);
+  describe("Sell", () => {
+    beforeEach(async () => {
+      tokenId = 0;
+      amount = 10;
+      priceUSD = 10;
+      tokenURI = "ipfs://1234/12323";
+      const tx = await nft.mint(tokenURI, 10);
       await printGas(tx);
-      const taxRate = await marketplace.taxRate();
-      expect(taxRate).to.be.eq(2);
     });
-  });
 
-  describe("recipient", () => {
-    it("fail no admin setting up recipient", async () => {
-      await expect(marketplace.connect(userSigner).setRecipient(2)).to.be
-        .reverted;
+    it("unlock for sale fail try list 0 tokens", async () => {
+      await expect(
+        marketplace.unlockForSale(tokenId, 0, priceUSD)
+      ).to.be.revertedWith("You cant sell 0 tokens!");
     });
-    it("admin can set up rate", async () => {
-      const tx = await marketplace.setRecipient(deployer);
+    it("unlock for sale fail you dont have enought tokens", async () => {
+      await expect(
+        marketplace.unlockForSale(tokenId, amount + 1, priceUSD)
+      ).to.be.revertedWith("You dont have enought tokens!");
+    });
+    it("unlock for sale", async () => {
+      const tx = await marketplace.unlockForSale(tokenId, amount, priceUSD);
       await printGas(tx);
-      const taxRate = await marketplace.recipient();
-      expect(taxRate).to.be.eq(deployer);
+      const sellId = tx.value;
+      const newSell = await marketplace.sells(sellId);
+
+      expect(newSell.tokenId).to.be.eq(tokenId);
+      expect(newSell.amount).to.be.eq(amount);
+      expect(newSell.priceUSD).to.be.eq(priceUSD);
     });
   });
 });

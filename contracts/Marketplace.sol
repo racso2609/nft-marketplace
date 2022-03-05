@@ -1,10 +1,24 @@
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+
+import "@openzeppelin/contracts/utils/Counters.sol";
 import "./ERC1155/ERC1155.sol";
 import "./utils/RoleManagement.sol";
 import "./utils/TaxManagement.sol";
 
 contract Marketplace is Initializable, RoleManagement, TaxManagement {
+    using Counters for Counters.Counter;
+
     Nft public erc1155;
+    Counters.Counter private sellQuantity;
+
+    struct Sell {
+        uint256 tokenId;
+        uint256 amount;
+        uint256 priceUSD;
+    }
+
+    /// @dev link sellId to an sell
+    mapping(uint256 => Sell) public sells;
 
     /// @param _erc1155 address of the erc1155 contract already initialized
     /// @dev initialize marketplace contract
@@ -42,5 +56,25 @@ contract Marketplace is Initializable, RoleManagement, TaxManagement {
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
         _setRecipient(_recipient);
+    }
+
+    function unlockForSale(
+        uint256 _tokenId,
+        uint256 _amount,
+        uint256 _priceUSD
+    ) external returns (uint256) {
+        require(_amount > 0, "You cant sell 0 tokens!");
+        require(
+            erc1155.balanceOf(msg.sender, _tokenId) >= _amount,
+            "You dont have enought tokens!"
+        );
+        Sell memory newSell;
+        newSell.tokenId = _tokenId;
+        newSell.amount = _amount;
+        newSell.priceUSD = _priceUSD;
+        sells[sellQuantity.current()] = newSell;
+
+        sellQuantity.increment();
+        return sellQuantity.current() - 1;
     }
 }
