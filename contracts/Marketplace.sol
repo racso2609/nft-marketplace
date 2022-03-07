@@ -61,6 +61,7 @@ contract Marketplace is Initializable, RoleManagement, TaxManagement, Payment {
         _setRecipient(_recipient);
     }
 
+    /// @dev put nfts on sale
     function unlockForSale(
         uint256 _tokenId,
         uint256 _amount,

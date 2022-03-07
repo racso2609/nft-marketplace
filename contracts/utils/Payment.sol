@@ -1,4 +1,4 @@
-contract Payment {
+contract Payment is PriceConsumerV3 {
     mapping(string => bool) avaliableMethods;
 
     modifier isValidMethod(string calldata _paymentType) {
@@ -17,10 +17,26 @@ contract Payment {
         avaliableMethods = newMethods;
     }
 
-    function paymentWithEth() {}
+    function getLatestPrice(string calldata _paymentType)
+        public
+        returns (int256)
+    {
+        if (_paymentType == "dai") {
+            return getLatestPriceDaiToUsd();
+        } else if (_paymentType == "link") {
+            return getLatestPriceLinkToUsd();
+        } else {
+            return getLatestPriceEthToUsd();
+        }
+    }
 
-    function _buy(uint256 tokenId, string calldata _paymentType)
-        internal
-        isValidMethod(_paymentType)
-    {}
+    function _buy(
+        uint256 _tokenId,
+        string calldata _paymentType,
+        uint256 _amount
+    ) internal isValidMethod(_paymentType) {
+        int256 usdPrice = getLatestPrice(_paymentType);
+        // 1 coin == getLatestPrice
+        // ?      ==    _amount
+    }
 }

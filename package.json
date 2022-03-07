@@ -5,7 +5,7 @@
     "lint": "prettier --list-different 'contracts/**/*.sol'",
     "test": "npx hardhat test",
     "compile": "npmx hardhat compile",
-    "deploy-test": "hardhat deploy --network rinkeby"
+    "deploy-test": "hardhat deploy --network rinkeby --tags Marketplace"
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.5",
@@ -22,6 +22,7 @@
     "solidity-coverage": "^0.7.19"
   },
   "dependencies": {
+    "@chainlink/contracts": "^0.4.0",
     "@openzeppelin/contracts-upgradeable": "^4.5.2",
     "ethereum-waffle": "^3.4.0",
     "prettier": "^2.5.1",

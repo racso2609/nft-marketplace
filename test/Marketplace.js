@@ -1,6 +1,5 @@
 const { expect } = require("chai");
 const { fixture } = deployments;
-const { utils } = ethers;
 const { printGas } = require("../utils/transactions");
 
 describe("Marketplace", () => {
