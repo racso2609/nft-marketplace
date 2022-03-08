@@ -1,3 +1,5 @@
+pragma solidity ^0.8.7;
+
 contract TaxManagement {
     uint256 public taxRate;
     address public recipient;

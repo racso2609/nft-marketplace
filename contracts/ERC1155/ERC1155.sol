@@ -6,7 +6,9 @@ contract Nft is ERC1155 {
     Counters.Counter private nftQuantity;
     struct NftObject {
         string tokenURI;
+        address owner;
     }
+
     mapping(uint256 => NftObject) public nfts;
 
     constructor() ERC1155("") {}
@@ -31,6 +33,7 @@ contract Nft is ERC1155 {
         _mint(msg.sender, nftQuantity.current(), amount, "");
         NftObject memory newNft;
         newNft.tokenURI = _tokenURI;
+        newNft.owner = msg.sender;
         nfts[nftQuantity.current()] = newNft;
         nftQuantity.increment();
         return nftQuantity.current() - 1;

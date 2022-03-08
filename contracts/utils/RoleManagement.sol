@@ -1,3 +1,4 @@
+pragma solidity ^0.8.7;
 import "@openzeppelin/contracts/access/AccessControl.sol";
 
 contract RoleManagement is AccessControl {
@@ -5,7 +6,7 @@ contract RoleManagement is AccessControl {
         _grantRole(DEFAULT_ADMIN_ROLE, _user);
     }
 
-    function isAdmin(address _user) public returns (bool) {
+    function isAdmin(address _user) public view returns (bool) {
         return hasRole(DEFAULT_ADMIN_ROLE, _user);
     }
 }
