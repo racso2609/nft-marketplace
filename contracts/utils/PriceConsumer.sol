@@ -20,7 +20,7 @@ contract PriceConsumerV3 {
             uint256 timeStamp,
             uint80 answeredInRound
         ) = priceFeedETH.latestRoundData();
-        return uint256(price * 10**10);
+        return uint256(price * 10**10); // return number with 8 decimal transform to 18 decimals
     }
 
     /**
