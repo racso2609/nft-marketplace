@@ -12,7 +12,6 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
-import "hardhat/console.sol";
 
 contract Marketplace is
     Initializable,
@@ -50,6 +49,9 @@ contract Marketplace is
 
         _;
     }
+    event Buy(uint256 _sellId, address buyer, address seller);
+    event CancelSale(uint256 _sellId, address seller);
+    event CreateSale(uint256 _sellId, address seller);
 
     /// @dev link sellId to an sell
     mapping(uint256 => Sell) public sells;
@@ -125,19 +127,21 @@ contract Marketplace is
         Sell memory newSell;
         newSell.tokenId = _tokenId;
         newSell.amount = _amount;
-        newSell.priceUSD = _priceUSD * 10**18; //parse ether
+        newSell.priceUSD = _priceUSD.mul(10**18); //parse ether
         newSell.duration = _duration;
         newSell.startTime = block.timestamp;
         newSell.owner = msg.sender;
         sells[sellQuantity.current()] = newSell;
 
         sellQuantity.increment();
+        emit CreateSale(sellQuantity.current() - 1, msg.sender);
         return sellQuantity.current() - 1;
     }
 
     function cancelSell(uint256 _sellId) external {
         require(sells[_sellId].owner == msg.sender, "You are not the owner!");
         sells[_sellId].cancelled = true;
+        emit CancelSale(_sellId, msg.sender);
     }
 
     function buyEth(uint256 _sellId) external payable isPosibleToBuy(_sellId) {
@@ -147,12 +151,13 @@ contract Marketplace is
         uint256 totalCoins = sells[_sellId].priceUSD.div(usdPrice);
         require(msg.value >= totalCoins, "Incorrect amount!");
         uint256 tokenId = sells[_sellId].tokenId;
-        (string memory tokenURI, address ownerOfNft) = erc1155.nfts(tokenId);
-        payable(ownerOfNft).call{value: totalCoins}("");
+        (, address ownerOfNft) = erc1155.nfts(tokenId);
+        payable(ownerOfNft).call{value: totalCoins};
         if (msg.value > totalCoins)
-            payable(msg.sender).call{value: msg.value - totalCoins}("");
+            payable(msg.sender).call{value: msg.value - totalCoins};
 
         sells[_sellId].sold = true;
+        emit Buy(_sellId, msg.sender, sells[_sellId].owner);
     }
 
     function buyDai(uint256 _sellId) external isPosibleToBuy(_sellId) {
@@ -161,10 +166,11 @@ contract Marketplace is
         // ?      ==    _amount
         uint256 totalCoins = sells[_sellId].priceUSD.div(usdPrice);
         uint256 tokenId = sells[_sellId].tokenId;
-        (string memory tokenURI, address ownerOfNft) = erc1155.nfts(tokenId);
+        (, address ownerOfNft) = erc1155.nfts(tokenId);
         daiToken.transferFrom(msg.sender, ownerOfNft, totalCoins);
 
         sells[_sellId].sold = true;
+        emit Buy(_sellId, msg.sender, sells[_sellId].owner);
     }
 
     function buyLink(uint256 _sellId) external isPosibleToBuy(_sellId) {
@@ -173,9 +179,10 @@ contract Marketplace is
         // ?      ==    _amount
         uint256 totalCoins = sells[_sellId].priceUSD.div(usdPrice);
         uint256 tokenId = sells[_sellId].tokenId;
-        (string memory tokenURI, address ownerOfNft) = erc1155.nfts(tokenId);
+        (, address ownerOfNft) = erc1155.nfts(tokenId);
         linkToken.transferFrom(msg.sender, ownerOfNft, totalCoins);
 
         sells[_sellId].sold = true;
+        emit Buy(_sellId, msg.sender, sells[_sellId].owner);
     }
 }

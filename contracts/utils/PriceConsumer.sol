@@ -13,14 +13,8 @@ contract PriceConsumerV3 {
      * @dev Returns the latest price ETH/USD
      */
     function getLatestPriceEthToUsd() public view returns (uint256) {
-        (
-            uint80 roundID,
-            int256 price,
-            uint256 startedAt,
-            uint256 timeStamp,
-            uint80 answeredInRound
-        ) = priceFeedETH.latestRoundData();
-        return uint256(price * 10**10); // return number with 8 decimal transform to 18 decimals
+        (, int256 price, , , ) = priceFeedETH.latestRoundData();
+        return uint256(price); // return number with 8 decimal transform to 18 decimals
     }
 
     /**
@@ -28,14 +22,8 @@ contract PriceConsumerV3 {
      */
 
     function getLatestPriceDaiToUsd() public view returns (uint256) {
-        (
-            uint80 roundID,
-            int256 price,
-            uint256 startedAt,
-            uint256 timeStamp,
-            uint80 answeredInRound
-        ) = priceFeedDAI.latestRoundData();
-        return uint256(price * 10**10);
+        (, int256 price, , , ) = priceFeedDAI.latestRoundData();
+        return uint256(price);
     }
 
     /**
@@ -43,13 +31,7 @@ contract PriceConsumerV3 {
      */
 
     function getLatestPriceLinkToUsd() public view returns (uint256) {
-        (
-            uint80 roundID,
-            int256 price,
-            uint256 startedAt,
-            uint256 timeStamp,
-            uint80 answeredInRound
-        ) = priceFeedLink.latestRoundData();
-        return uint256(price * 10**10);
+        (, int256 price, , , ) = priceFeedLink.latestRoundData();
+        return uint256(price);
     }
 }

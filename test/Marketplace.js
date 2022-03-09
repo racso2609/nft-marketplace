@@ -1,7 +1,7 @@
 const { expect } = require("chai");
 const { fixture } = deployments;
 const { printGas, increaseTime } = require("../utils/transactions");
-const { swap } = require("../utils/uniswap");
+const { swap, allowance } = require("../utils/uniswap");
 
 describe("Marketplace", () => {
   beforeEach(async () => {
@@ -115,13 +115,13 @@ describe("Marketplace", () => {
 
   describe("buy", () => {
     beforeEach(async () => {
+      priceUSD = 1;
       const tx = await nft.mint(tokenURI, 10);
       await printGas(tx);
     });
 
     describe("eth", () => {
       beforeEach(async () => {
-        priceUSD = 10000;
         const tx = await marketplace.unlockForSale(
           tokenId,
           amount,
@@ -143,6 +143,15 @@ describe("Marketplace", () => {
         await printGas(tx);
         const sell = await marketplace.sells(sellId);
         expect(sell.sold);
+      });
+      it("test buy event", async () => {
+        await expect(
+          marketplace.buyEth(0, {
+            value: ethers.utils.parseEther("1"),
+          })
+        )
+          .to.emit(marketplace, "Buy")
+          .withArgs(0, deployer, deployer);
       });
       it("try to buy sold Token", async () => {
         const tx = await marketplace.buyEth(0, {
@@ -166,7 +175,6 @@ describe("Marketplace", () => {
     });
     describe("DAI", () => {
       beforeEach(async () => {
-        priceUSD = 2;
         const tx = await marketplace.unlockForSale(
           tokenId,
           amount,
@@ -179,21 +187,41 @@ describe("Marketplace", () => {
         await swap({
           tokenAddress: daiAddress,
           fundAddress: deployer,
-          impersonateAddress: user,
+          impersonateAddress: "0x7879a0c239f33db9160a8036db0e082616ca8690",
+          contractAddress: marketplace.address,
         });
       });
 
+      it("insufficient allowance", async () => {
+        await expect(marketplace.buyDai(0)).to.be.revertedWith(
+          "Dai/insufficient-allowance"
+        );
+      });
       it("buy", async () => {
+        await allowance({
+          fundAddress: deployer,
+          contractAddress: marketplace.address,
+          tokenAddress: daiAddress,
+        });
         const tx = await marketplace.buyDai(0);
 
         await printGas(tx);
         const sell = await marketplace.sells(sellId);
         expect(sell.sold);
       });
+      it("buy event", async () => {
+        await allowance({
+          fundAddress: deployer,
+          contractAddress: marketplace.address,
+          tokenAddress: daiAddress,
+        });
+        await expect(marketplace.buyDai(0))
+          .to.emit(marketplace, "Buy")
+          .withArgs(0, deployer, deployer);
+      });
     });
     describe("Link", () => {
       beforeEach(async () => {
-        priceUSD = 10000;
         const tx = await marketplace.unlockForSale(
           tokenId,
           amount,
@@ -206,16 +234,34 @@ describe("Marketplace", () => {
         await swap({
           tokenAddress: linkAddress,
           fundAddress: deployer,
-          impersonateAddress: user,
+          impersonateAddress: "0x5a52e96bacdabb82fd05763e25335261b270efcb",
         });
       });
 
+      it("insufficient allowance", async () => {
+        await expect(marketplace.buyLink(0)).to.be.reverted;
+      });
       it("buy", async () => {
+        await allowance({
+          fundAddress: deployer,
+          contractAddress: marketplace.address,
+          tokenAddress: linkAddress,
+        });
         const tx = await marketplace.buyLink(0);
 
         await printGas(tx);
         const sell = await marketplace.sells(sellId);
         expect(sell.sold);
+      });
+      it("buy event", async () => {
+        await allowance({
+          fundAddress: deployer,
+          contractAddress: marketplace.address,
+          tokenAddress: linkAddress,
+        });
+        await expect(marketplace.buyLink(0))
+          .to.emit(marketplace, "Buy")
+          .withArgs(0, deployer, deployer);
       });
     });
   });
