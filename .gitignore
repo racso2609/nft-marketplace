@@ -6,3 +6,5 @@ yarn.log
 deployments
 .log
 yarn*
+coverage*
+coverage
