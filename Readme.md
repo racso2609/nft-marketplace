@@ -7,5 +7,5 @@ when you create a sale you indicate the price on USD but i multiply that for 10 
 ``` js
 yarn test //run test suite on fork mainnet
 yarn compile //compile all our contracts 
-yarn deploy-test // depoy the contracts with the tag Marketplace
+yarn deploy-test // depoy the contracts with the tag Marketplace on rinkeby
 ```

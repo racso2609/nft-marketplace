@@ -3,7 +3,7 @@
   "scripts": {
     "prettier": "prettier --write 'contracts/**/*.sol'",
     "lint": "prettier --list-different 'contracts/**/*.sol'",
-    "test": "npx hardhat test",
+    "test": "npx hardhat test --network hardhat",
     "compile": "npmx hardhat compile",
     "deploy-test": "hardhat deploy --network rinkeby --tags Marketplace"
   },
