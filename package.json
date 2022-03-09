@@ -24,7 +24,6 @@
   "dependencies": {
     "@chainlink/contracts": "^0.4.0",
     "@openzeppelin/contracts-upgradeable": "^4.5.2",
-    "@uniswap/sdk": "^3.0.3",
     "ethereum-waffle": "^3.4.0",
     "prettier": "^2.5.1",
     "prettier-plugin-solidity": "^1.0.0-beta.19"

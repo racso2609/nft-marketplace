@@ -85,7 +85,7 @@ describe("Marketplace", () => {
         );
         await printGas(tx);
         const sellId = tx.value;
-        const newSell = await marketplace.sells(sellId);
+        const newSell = await marketplace.sales(sellId);
 
         expect(newSell.tokenId).to.be.eq(tokenId);
         expect(newSell.amount).to.be.eq(amount);
@@ -104,10 +104,10 @@ describe("Marketplace", () => {
         );
         await printGas(createSaleTx);
 
-        let mySale = await marketplace.sells(0);
-        const tx = await marketplace.cancelSell(0);
+        let mySale = await marketplace.sales(0);
+        const tx = await marketplace.cancelSale(0);
         await printGas(tx);
-        mySale = await marketplace.sells(0);
+        mySale = await marketplace.sales(0);
         expect(mySale.cancelled);
       });
     });
@@ -141,7 +141,7 @@ describe("Marketplace", () => {
           value: ethers.utils.parseEther("1"),
         });
         await printGas(tx);
-        const sell = await marketplace.sells(sellId);
+        const sell = await marketplace.sales(sellId);
         expect(sell.sold);
       });
       it("test buy event", async () => {
@@ -167,9 +167,9 @@ describe("Marketplace", () => {
         );
       });
       it("try to buy cencelled tokens", async () => {
-        await marketplace.cancelSell(0);
+        await marketplace.cancelSale(0);
         await expect(marketplace.buyEth(0)).to.be.revertedWith(
-          "Sell cancelled!"
+          "Sale cancelled!"
         );
       });
     });
@@ -206,7 +206,7 @@ describe("Marketplace", () => {
         const tx = await marketplace.buyDai(0);
 
         await printGas(tx);
-        const sell = await marketplace.sells(sellId);
+        const sell = await marketplace.sales(sellId);
         expect(sell.sold);
       });
       it("buy event", async () => {
@@ -250,7 +250,7 @@ describe("Marketplace", () => {
         const tx = await marketplace.buyLink(0);
 
         await printGas(tx);
-        const sell = await marketplace.sells(sellId);
+        const sell = await marketplace.sales(sellId);
         expect(sell.sold);
       });
       it("buy event", async () => {

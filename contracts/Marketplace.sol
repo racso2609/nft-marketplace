@@ -12,7 +12,6 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
-
 contract Marketplace is
     Initializable,
     RoleManagement,
@@ -28,7 +27,7 @@ contract Marketplace is
     IERC20 daiToken;
     IERC20 linkToken;
 
-    struct Sell {
+    struct Sale {
         uint256 tokenId;
         uint256 amount;
         uint256 priceUSD;
@@ -38,23 +37,23 @@ contract Marketplace is
         bool cancelled;
         address owner;
     }
-    modifier isPosibleToBuy(uint256 _sellId) {
+    modifier isPosibleToBuy(uint256 _saleId) {
         require(
             block.timestamp <
-                sells[_sellId].startTime + sells[_sellId].duration,
+                sales[_saleId].startTime + sales[_saleId].duration,
             "Deadline reached!"
         );
-        require(!sells[_sellId].sold, "Tokens solds!");
-        require(!sells[_sellId].cancelled, "Sell cancelled!");
+        require(!sales[_saleId].sold, "Tokens solds!");
+        require(!sales[_saleId].cancelled, "Sale cancelled!");
 
         _;
     }
-    event Buy(uint256 _sellId, address buyer, address seller);
-    event CancelSale(uint256 _sellId, address seller);
-    event CreateSale(uint256 _sellId, address seller);
+    event Buy(uint256 _saleId, address buyer, address seller);
+    event CancelSale(uint256 _saleId, address seller);
+    event CreateSale(uint256 _saleId, address seller);
 
-    /// @dev link sellId to an sell
-    mapping(uint256 => Sell) public sells;
+    /// @dev link saleId to an sell
+    mapping(uint256 => Sale) public sales;
 
     /// @param _erc1155 address of the erc1155 contract already initialized
     /// @dev initialize marketplace contract
@@ -124,65 +123,71 @@ contract Marketplace is
             erc1155.balanceOf(msg.sender, _tokenId) >= _amount,
             "You dont have enought tokens!"
         );
-        Sell memory newSell;
-        newSell.tokenId = _tokenId;
-        newSell.amount = _amount;
-        newSell.priceUSD = _priceUSD.mul(10**18); //parse ether
-        newSell.duration = _duration;
-        newSell.startTime = block.timestamp;
-        newSell.owner = msg.sender;
-        sells[sellQuantity.current()] = newSell;
+        Sale memory newSale;
+        newSale.tokenId = _tokenId;
+        newSale.amount = _amount;
+        newSale.priceUSD = _priceUSD.mul(10**18); //parse ether
+        newSale.duration = _duration;
+        newSale.startTime = block.timestamp;
+        newSale.owner = msg.sender;
+        sales[sellQuantity.current()] = newSale;
 
         sellQuantity.increment();
         emit CreateSale(sellQuantity.current() - 1, msg.sender);
         return sellQuantity.current() - 1;
     }
 
-    function cancelSell(uint256 _sellId) external {
-        require(sells[_sellId].owner == msg.sender, "You are not the owner!");
-        sells[_sellId].cancelled = true;
-        emit CancelSale(_sellId, msg.sender);
+    /* @params _saleId identifier of the current sale */
+    /* @dev cancel the sale */
+
+    function cancelSale(uint256 _saleId) external {
+        require(sales[_saleId].owner == msg.sender, "You are not the owner!");
+        sales[_saleId].cancelled = true;
+        emit CancelSale(_saleId, msg.sender);
     }
 
-    function buyEth(uint256 _sellId) external payable isPosibleToBuy(_sellId) {
+    /* @params _saleId identifier of the current sale */
+    /* @dev the next 3 function work similar with different coin ETH,DAI and LINK */
+
+    function buyEth(uint256 _saleId) external payable isPosibleToBuy(_saleId) {
         uint256 usdPrice = getLatestPriceEthToUsd();
         // 1 coin == getLatestPrice
         // ?      ==    _amount
-        uint256 totalCoins = sells[_sellId].priceUSD.div(usdPrice);
+        uint256 totalCoins = sales[_saleId].priceUSD.div(usdPrice);
         require(msg.value >= totalCoins, "Incorrect amount!");
-        uint256 tokenId = sells[_sellId].tokenId;
+        uint256 tokenId = sales[_saleId].tokenId;
         (, address ownerOfNft) = erc1155.nfts(tokenId);
         payable(ownerOfNft).call{value: totalCoins};
         if (msg.value > totalCoins)
             payable(msg.sender).call{value: msg.value - totalCoins};
 
-        sells[_sellId].sold = true;
-        emit Buy(_sellId, msg.sender, sells[_sellId].owner);
+        sales[_saleId].sold = true;
+        emit Buy(_saleId, msg.sender, sales[_saleId].owner);
     }
 
-    function buyDai(uint256 _sellId) external isPosibleToBuy(_sellId) {
+    function buyDai(uint256 _saleId) external isPosibleToBuy(_saleId) {
         uint256 usdPrice = getLatestPriceDaiToUsd();
         // 1 coin == getLatestPrice
         // ?      ==    _amount
-        uint256 totalCoins = sells[_sellId].priceUSD.div(usdPrice);
-        uint256 tokenId = sells[_sellId].tokenId;
+        uint256 totalCoins = sales[_saleId].priceUSD.div(usdPrice);
+        uint256 tokenId = sales[_saleId].tokenId;
         (, address ownerOfNft) = erc1155.nfts(tokenId);
         daiToken.transferFrom(msg.sender, ownerOfNft, totalCoins);
 
-        sells[_sellId].sold = true;
-        emit Buy(_sellId, msg.sender, sells[_sellId].owner);
+        sales[_saleId].sold = true;
+        emit Buy(_saleId, msg.sender, sales[_saleId].owner);
     }
 
-    function buyLink(uint256 _sellId) external isPosibleToBuy(_sellId) {
+    function buyLink(uint256 _saleId) external isPosibleToBuy(_saleId) {
         uint256 usdPrice = getLatestPriceLinkToUsd();
         // 1 coin == getLatestPrice
         // ?      ==    _amount
-        uint256 totalCoins = sells[_sellId].priceUSD.div(usdPrice);
-        uint256 tokenId = sells[_sellId].tokenId;
+        uint256 totalCoins = sales[_saleId].priceUSD.div(usdPrice);
+        uint256 tokenId = sales[_saleId].tokenId;
         (, address ownerOfNft) = erc1155.nfts(tokenId);
         linkToken.transferFrom(msg.sender, ownerOfNft, totalCoins);
 
-        sells[_sellId].sold = true;
-        emit Buy(_sellId, msg.sender, sells[_sellId].owner);
+        sales[_saleId].sold = true;
+        emit Buy(_saleId, msg.sender, sales[_saleId].owner);
     }
 }
