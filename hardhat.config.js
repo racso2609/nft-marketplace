@@ -17,14 +17,13 @@ let mnemonic = process.env.MNEMONIC
   : "test test test test test test test test test test test test";
 
 module.exports = {
-  defaultNetWork: "rinkeby",
   networks: {
     hardhat: {
       // Uncomment these lines to use mainnet fork
-      // forking: {
-      // url: `https:eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_KEY}`,
-      // blockNumber: 11589707,
-      // },
+      forking: {
+        url: `https:eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_KEY}`,
+        // blockNumber: 11589707,
+      },
     },
     rinkeby: {
       url: `https:eth-rinkeby.alchemyapi.io/v2/${process.env.ALCHEMY_KEY}`,

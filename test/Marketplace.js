@@ -1,11 +1,13 @@
 const { expect } = require("chai");
 const { fixture } = deployments;
 const { printGas, increaseTime } = require("../utils/transactions");
+const { swap } = require("../utils/uniswap");
 
 describe("Marketplace", () => {
   beforeEach(async () => {
     ({ deployer, user, userNotRegister } = await getNamedAccounts());
     userSigner = await ethers.provider.getSigner(user);
+    deployerSigner = await ethers.provider.getSigner(deployer);
     await fixture(["Marketplace"]);
     marketplace = await ethers.getContract("Marketplace");
     nft = await ethers.getContract("Nft");
@@ -56,7 +58,7 @@ describe("Marketplace", () => {
     beforeEach(async () => {
       tokenId = 0;
       amount = 10;
-      priceUSD = 10;
+      priceUSD = 2;
       tokenURI = "ipfs://1234/12323";
 
       duration = 10 * 60 * 60;
@@ -87,8 +89,26 @@ describe("Marketplace", () => {
 
         expect(newSell.tokenId).to.be.eq(tokenId);
         expect(newSell.amount).to.be.eq(amount);
-        expect(newSell.priceUSD).to.be.eq(priceUSD);
+        expect(newSell.priceUSD).to.be.eq(
+          ethers.utils.parseEther(priceUSD.toString())
+        );
+        expect(newSell.owner).to.be.eq(deployer);
         expect(newSell.duration).to.be.eq(duration);
+      });
+      it("cancel sale", async () => {
+        const createSaleTx = await marketplace.unlockForSale(
+          tokenId,
+          amount,
+          priceUSD,
+          duration
+        );
+        await printGas(createSaleTx);
+
+        let mySale = await marketplace.sells(0);
+        const tx = await marketplace.cancelSell(0);
+        await printGas(tx);
+        mySale = await marketplace.sells(0);
+        expect(mySale.cancelled);
       });
     });
   });
@@ -101,6 +121,7 @@ describe("Marketplace", () => {
 
     describe("eth", () => {
       beforeEach(async () => {
+        priceUSD = 10000;
         const tx = await marketplace.unlockForSale(
           tokenId,
           amount,
@@ -116,13 +137,17 @@ describe("Marketplace", () => {
         );
       });
       it("buy", async () => {
-        const tx = await marketplace.buyEth(0);
+        const tx = await marketplace.buyEth(0, {
+          value: ethers.utils.parseEther("1"),
+        });
         await printGas(tx);
         const sell = await marketplace.sells(sellId);
         expect(sell.sold);
       });
       it("try to buy sold Token", async () => {
-        const tx = await marketplace.buyEth(0);
+        const tx = await marketplace.buyEth(0, {
+          value: ethers.utils.parseEther("1"),
+        });
         await printGas(tx);
         await expect(marketplace.buyEth(0)).to.be.revertedWith("Tokens solds!");
       });
@@ -132,10 +157,16 @@ describe("Marketplace", () => {
           "Deadline reached!"
         );
       });
-      it("buy sending more thant the price", async () => {});
+      it("try to buy cencelled tokens", async () => {
+        await marketplace.cancelSell(0);
+        await expect(marketplace.buyEth(0)).to.be.revertedWith(
+          "Sell cancelled!"
+        );
+      });
     });
     describe("DAI", () => {
       beforeEach(async () => {
+        priceUSD = 2;
         const tx = await marketplace.unlockForSale(
           tokenId,
           amount,
@@ -144,12 +175,14 @@ describe("Marketplace", () => {
         );
         await printGas(tx);
         sellId = tx.value;
+        daiAddress = "0x6B175474E89094C44Da98b954EedeAC495271d0F";
+        await swap({
+          tokenAddress: daiAddress,
+          fundAddress: deployer,
+          impersonateAddress: user,
+        });
       });
-      it("fail trying to buy not enought eth send ", async () => {
-        await expect(marketplace.buyDai(0)).to.be.revertedWith(
-          "Incorrect amount"
-        );
-      });
+
       it("buy", async () => {
         const tx = await marketplace.buyDai(0);
 
@@ -157,18 +190,33 @@ describe("Marketplace", () => {
         const sell = await marketplace.sells(sellId);
         expect(sell.sold);
       });
-      it("try to buy sold Token", async () => {
-        const tx = await marketplace.buyDai(0);
-        await printGas(tx);
-        await expect(marketplace.buyEth(0)).to.be.revertedWith("Tokens solds!");
-      });
-      it("try to buy expired token", async () => {
-        await increaseTime(duration + 10);
-        await expect(marketplace.buyDai(0)).to.be.revertedWith(
-          "Deadline reached!"
+    });
+    describe("Link", () => {
+      beforeEach(async () => {
+        priceUSD = 10000;
+        const tx = await marketplace.unlockForSale(
+          tokenId,
+          amount,
+          priceUSD,
+          duration
         );
+        await printGas(tx);
+        sellId = tx.value;
+        linkAddress = "0x514910771AF9Ca656af840dff83E8264EcF986CA";
+        await swap({
+          tokenAddress: linkAddress,
+          fundAddress: deployer,
+          impersonateAddress: user,
+        });
       });
-      it("buy sending more thant the price", async () => {});
+
+      it("buy", async () => {
+        const tx = await marketplace.buyLink(0);
+
+        await printGas(tx);
+        const sell = await marketplace.sells(sellId);
+        expect(sell.sold);
+      });
     });
   });
 });
