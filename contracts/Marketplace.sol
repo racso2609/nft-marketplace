@@ -11,6 +11,7 @@ import "./utils/PriceConsumer.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "hardhat/console.sol";
 
 contract Marketplace is
     Initializable,
@@ -126,7 +127,7 @@ contract Marketplace is
         Sale memory newSale;
         newSale.tokenId = _tokenId;
         newSale.amount = _amount;
-        newSale.priceUSD = _priceUSD.mul(10**18); //parse ether
+        newSale.priceUSD = _priceUSD;
         newSale.duration = _duration;
         newSale.startTime = block.timestamp;
         newSale.owner = msg.sender;
@@ -153,11 +154,15 @@ contract Marketplace is
         uint256 usdPrice = getLatestPriceEthToUsd();
         // 1 coin == getLatestPrice
         // ?      ==    _amount
-        uint256 totalCoins = sales[_saleId].priceUSD.div(usdPrice);
+        uint256 totalCoins = sales[_saleId].priceUSD.mul(10**8).mul(10**18).div(
+            usdPrice
+        );
+        uint256 tax = totalCoins.mul(taxRate).div(100);
         require(msg.value >= totalCoins, "Incorrect amount!");
         uint256 tokenId = sales[_saleId].tokenId;
         (, address ownerOfNft) = erc1155.nfts(tokenId);
-        payable(ownerOfNft).call{value: totalCoins};
+        payable(ownerOfNft).call{value: totalCoins - tax};
+        payable(recipient).call{value: tax};
         if (msg.value > totalCoins)
             payable(msg.sender).call{value: msg.value - totalCoins};
 
@@ -169,10 +174,16 @@ contract Marketplace is
         uint256 usdPrice = getLatestPriceDaiToUsd();
         // 1 coin == getLatestPrice
         // ?      ==    _amount
-        uint256 totalCoins = sales[_saleId].priceUSD.div(usdPrice);
+        uint256 totalCoins = sales[_saleId].priceUSD.mul(10**8).mul(10**8).div(
+            usdPrice
+        );
+
+        console.log(totalCoins, usdPrice);
+        uint256 tax = totalCoins.mul(taxRate).div(100);
         uint256 tokenId = sales[_saleId].tokenId;
         (, address ownerOfNft) = erc1155.nfts(tokenId);
-        daiToken.transferFrom(msg.sender, ownerOfNft, totalCoins);
+        daiToken.transferFrom(msg.sender, ownerOfNft, totalCoins - tax);
+        daiToken.transferFrom(msg.sender, recipient, tax);
 
         sales[_saleId].sold = true;
         emit Buy(_saleId, msg.sender, sales[_saleId].owner);
@@ -182,10 +193,15 @@ contract Marketplace is
         uint256 usdPrice = getLatestPriceLinkToUsd();
         // 1 coin == getLatestPrice
         // ?      ==    _amount
-        uint256 totalCoins = sales[_saleId].priceUSD.div(usdPrice);
+        uint256 totalCoins = sales[_saleId].priceUSD.mul(10**8).mul(10**8).div(
+            usdPrice
+        );
+        console.log(totalCoins, usdPrice);
+        uint256 tax = totalCoins.mul(taxRate).div(100);
         uint256 tokenId = sales[_saleId].tokenId;
         (, address ownerOfNft) = erc1155.nfts(tokenId);
-        linkToken.transferFrom(msg.sender, ownerOfNft, totalCoins);
+        linkToken.transferFrom(msg.sender, ownerOfNft, totalCoins - tax);
+        linkToken.transferFrom(msg.sender, recipient, tax);
 
         sales[_saleId].sold = true;
         emit Buy(_saleId, msg.sender, sales[_saleId].owner);

@@ -1,6 +1,7 @@
 require("dotenv").config();
 require("@nomiclabs/hardhat-ethers");
 require("@nomiclabs/hardhat-waffle");
+const hre = require("hardhat");
 
 const abi = [
   {
@@ -294,22 +295,41 @@ async function swap({ fundAddress, impersonateAddress, tokenAddress }) {
   const signer = await ethers.provider.getSigner(impersonateAddress);
 
   const tokenContract = new ethers.Contract(tokenAddress, abi, signer.provider);
-  const tx = await tokenContract
-    .connect(signer)
-    .transfer(fundAddress, ethers.utils.parseEther("2"));
+  const balance = await balanceOf({
+    tokenAddress,
+    userAddress: impersonateAddress,
+  });
+
+  const tx = await tokenContract.connect(signer).transfer(fundAddress, balance);
 
   await tx.wait();
 }
 
-async function allowance({ tokenAddress, contractAddress, fundAddress }) {
+async function allowance({
+  tokenAddress,
+  contractAddress,
+  fundAddress,
+  amount,
+}) {
   const signer = await ethers.provider.getSigner(fundAddress);
+
+  const allowanceAmount = amount || ethers.utils.parseEther("1");
 
   const tokenContract = new ethers.Contract(tokenAddress, abi, signer.provider);
   const txApprove = await tokenContract
     .connect(signer)
-    .approve(contractAddress, ethers.utils.parseEther("2"));
+    .approve(contractAddress, allowanceAmount);
 
   await txApprove.wait();
 }
 
-module.exports = { swap, allowance };
+async function balanceOf({ tokenAddress, userAddress }) {
+  const signer = await ethers.provider.getSigner(userAddress);
+
+  const tokenContract = new ethers.Contract(tokenAddress, abi, signer.provider);
+  const balanceOf = await tokenContract.connect(signer).balanceOf(userAddress);
+
+  return balanceOf;
+}
+
+module.exports = { swap, allowance, balanceOf };
